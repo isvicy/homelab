@@ -33,7 +33,7 @@ spec:
         - name: vip_lb_health_interval  # seconds between probes
           value: "3"
         - name: vip_lb_health_failed_threshold
-          value: "1"        # drop after a single failure
+          value: "3"        # drop after a single failure
       securityContext:
         capabilities:
           add:
