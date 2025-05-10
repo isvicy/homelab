@@ -4,7 +4,6 @@ metadata:
   name: kube-vip
   namespace: kube-system
 spec:
-  serviceAccountName: default
   containers:
   - name: kube-vip
     image: ghcr.io/kube-vip/kube-vip:v0.9.1
@@ -64,5 +63,5 @@ spec:
   hostNetwork: true
   volumes:
   - hostPath:
-      path: /etc/kubernetes/admin.conf
+      path: {{ k3s_kubeconfig_file }}
     name: kubeconfig
