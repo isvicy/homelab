@@ -14,10 +14,10 @@ boot: ~/.ssh/id_ed25519
 		boot.yml
 
 cluster:
-	ansible-playbook \
+	ansible-playbook -vvvv \
 		--inventory inventories/${env}.yml \
 		cluster.yml
 
 console:
-	ansible-console \
+	ansible-console -vvvv \
 		--inventory inventories/${env}.yml
