@@ -6,7 +6,7 @@ metadata:
 spec:
   containers:
     - name: kube-vip
-      image: ghcr.io/kube-vip/kube-vip:v0.6.4
+      image: ghcr.io/kube-vip/kube-vip:v0.9.1
       args:
         - manager
       env:
@@ -20,6 +20,20 @@ spec:
           value: "true"
         - name: lb_enable
           value: "true"
+        - name: vip_leaseDuration
+          value: "30s"
+        - name: vip_renewDeadline
+          value: "20s"
+        - name: vip_retryPeriod
+          value: "5s"
+        - name: vip_lb_health_port      # probe every backend
+          value: "6443"
+        - name: vip_lb_health_path
+          value: "/readyz"
+        - name: vip_lb_health_interval  # seconds between probes
+          value: "3"
+        - name: vip_lb_health_failed_threshold
+          value: "1"        # drop after a single failure
       securityContext:
         capabilities:
           add:
