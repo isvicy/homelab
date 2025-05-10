@@ -16,6 +16,10 @@ gitea:
   gitea:
     admin:
       existingSecret: gitea-admin-secret
+    postgresql:
+      enabled: true
+    postgresql-ha:
+      enabled: false
     config:
       server:
         LANDING_PAGE: explore
