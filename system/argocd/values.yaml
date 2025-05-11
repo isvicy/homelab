@@ -29,47 +29,272 @@ argo-cd:
     metrics: *metrics
   redis:
     metrics: *metrics
+
 argocd-apps:
+  defaultSyncPolicy: &defaultSyncPolicy
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 1m
+        factor: 2
+        maxDuration: 16m
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+    managedNamespaceMetadata:
+      annotations:
+        volsync.backube/privileged-movers: "true"
+
   applicationsets:
-    root:
+    # --- WAVE -20: Storage (Rook Ceph) ---
+    wave--20-system-storage:
       namespace: argocd
       generators:
         - git:
-            repoURL: &repoURL http://gitea-http.gitea:3000/ops/homelab
-            revision: &revision master
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
             directories:
-              - path: system/*
-              - path: platform/*
-              - path: apps/*
+              - path: system/rook-ceph
       template:
         metadata:
-          name: '{{path.basename}}'
+          name: 'rook-ceph'
+          annotations:
+            argocd.argoproj.io/sync-wave: "-20"
         spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: rook-ceph
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE -15: Ingress Controller ---
+    wave--15-system-ingress:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: system/ingress-nginx
+      template:
+        metadata:
+          name: 'ingress-nginx'
+          annotations:
+            argocd.argoproj.io/sync-wave: "-15"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: ingress-nginx
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE -10: Certificate Management ---
+    wave--10-system-cert-manager:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: system/cert-manager
+      template:
+        metadata:
+          name: 'cert-manager'
+          annotations:
+            argocd.argoproj.io/sync-wave: "-10"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: cert-manager
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE -5: External Connectivity ---
+    wave--5-system-connectivity:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: system/external-dns
+              - path: system/cloudflared
+              - path: apps/tailscale
+      template:
+        metadata:
+          name: 'connectivity-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "-5"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
           destination:
             name: in-cluster
             namespace: '{{path.basename}}'
-          project: default  # TODO
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE 0: Core Identity & Secrets Management ---
+    wave-0-platform-identity-secrets:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: platform/kanidm
+              - path: platform/dex
+              - path: platform/external-secrets
+              - path: platform/global-secrets
+      template:
+        metadata:
+          name: 'platform-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "0"
+        spec:
+          project: default
           source:
-            repoURL: *repoURL
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
             path: '{{path}}'
-            targetRevision: *revision
-          syncPolicy:
-            automated:
-              prune: true
-              selfHeal: true
-            retry:
-              limit: 10
-              backoff:
-                duration: 1m
-                factor: 2
-                maxDuration: 16m
-            syncOptions:
-              - CreateNamespace=true
-              - ApplyOutOfSyncOnly=true
-              - ServerSideApply=true
-            managedNamespaceMetadata:
-              annotations:
-                # Enable privileged VolSync movers by default for all namespaces
-                # TODO this may be refactored in the future for finer granularity
-                # See also https://volsync.readthedocs.io/en/stable/usage/permissionmodel.html
-                volsync.backube/privileged-movers: "true"
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: '{{path.basename}}'
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE 5: Core Platform Services (Git, CI, Registry) ---
+    wave-5-platform-core:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: platform/gitea
+              - path: platform/zot
+              - path: platform/woodpecker
+      template:
+        metadata:
+          name: 'platform-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "5"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: '{{path.basename}}'
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE 10: Monitoring & Logging Stack ---
+    wave-10-system-observability:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: system/loki
+              - path: system/monitoring-system
+              - path: platform/grafana
+      template:
+        metadata:
+          name: 'observability-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "10"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: '{{path.basename}}'
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE 15: System Utilities & VPN ---
+    wave-15-system-utils:
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              - path: system/kured
+              - path: system/volsync-system
+              - path: apps/wireguard
+      template:
+        metadata:
+          name: 'util-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "15"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: '{{path.basename}}'
+          syncPolicy: *defaultSyncPolicy
+
+    # --- WAVE 20: User Apps & Remaining Platform ---
+    wave-20-apps-and-platform-renovate: # Merged renovate here
+      namespace: argocd
+      generators:
+        - git:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            revision: master
+            directories:
+              # Platform
+              - path: platform/renovate
+              # Apps
+              - path: apps/homepage
+              - path: apps/actualbudget
+              - path: apps/blog
+              - path: apps/excalidraw
+              - path: apps/jellyfin
+              - path: apps/matrix
+              - path: apps/ollama
+              - path: apps/pairdrop
+              - path: apps/paperless
+              - path: apps/speedtest
+      template:
+        metadata:
+          # Differentiate app names if basenames might collide from different parent dirs
+          name: '{{ trimSuffix "/" path.path | splitList "/" | last }}-{{path.basename}}'
+          annotations:
+            argocd.argoproj.io/sync-wave: "20"
+        spec:
+          project: default
+          source:
+            repoURL: http://gitea-http.gitea:3000/ops/homelab
+            path: '{{path}}'
+            targetRevision: master
+          destination:
+            name: in-cluster
+            namespace: '{{path.basename}}'
+          syncPolicy: *defaultSyncPolicy
