@@ -2,10 +2,11 @@
 .PHONY: *
 .EXPORT_ALL_VARIABLES:
 
-KUBECONFIG = $(shell pwd)/metal/kubeconfig.yaml
+KUBESPRAY_DIR = $(shell pwd)/kubespray
+KUBECONFIG = $(KUBESPRAY_DIR)/inventory/unraid/artifacts/admin.conf
 KUBE_CONFIG_PATH = $(KUBECONFIG)
 
-default: metal system external smoke-test post-install clean
+default: metal-boot deploy-kubespray-cluster system external smoke-test post-install clean-docker
 
 configure:
 	./scripts/configure
@@ -13,6 +14,19 @@ configure:
 
 metal:
 	make -C metal
+
+metal-boot:
+	make -C metal boot
+
+deploy-kubespray-cluster:
+	cd $(KUBESPRAY_DIR) && ansible-playbook -v \
+		--inventory inventory/unraid/inventory.ini \
+		cluster.yml
+
+reset-kubespray-cluster:
+	cd $(KUBESPRAY_DIR) && ansible-playbook -v \
+	        --inventory inventory/unraid/inventory.ini \
+		reset.yml
 
 system:
 	make -C system

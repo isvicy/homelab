@@ -1,6 +1,6 @@
 .POSIX:
 
-export KUBECONFIG = $(shell pwd)/../metal/kubeconfig.yaml
+export KUBECONFIG = $(shell pwd)/../kubespray/inventory/unraid/artifacts/admin.conf
 
 .PHONY: bootstrap
 bootstrap:
