@@ -9,21 +9,21 @@ metal:
       hosts:
         metal0:
           {
-            ansible_host: 192.168.2.211,
+            ansible_host: 192.168.2.154,
             mac: "52:54:00:21:eb:34",
             disk: sda,
             network_interface: enp1s0,
           }
         metal1:
           {
-            ansible_host: 192.168.2.212,
+            ansible_host: 192.168.2.155,
             mac: "52:54:00:51:91:d7",
             disk: sda,
             network_interface: enp1s0,
           }
         metal2:
           {
-            ansible_host: 192.168.2.213,
+            ansible_host: 192.168.2.156
             mac: "52:54:00:56:8e:ca",
             disk: sda,
             network_interface: enp1s0,
