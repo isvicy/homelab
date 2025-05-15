@@ -11,22 +11,22 @@ metal:
           {
             ansible_host: 192.168.2.211,
             mac: "52:54:00:21:eb:34",
-            disk: vda,
-            network_interface: ens3,
+            disk: sda,
+            network_interface: enp1s0,
           }
         metal1:
           {
             ansible_host: 192.168.2.212,
             mac: "52:54:00:51:91:d7",
-            disk: vda,
-            network_interface: ens3,
+            disk: sda,
+            network_interface: enp1s0,
           }
         metal2:
           {
             ansible_host: 192.168.2.213,
             mac: "52:54:00:56:8e:ca",
-            disk: vda,
-            network_interface: ens3,
+            disk: sda,
+            network_interface: enp1s0,
           }
     workers:
       hosts:
@@ -35,6 +35,6 @@ metal:
             ansible_host: 192.168.2.214,
             mac: "52:54:00:20:24:ad",
             disk: vda,
-            network_interface: ens3,
+            network_interface: enp1s0,
           }
 
