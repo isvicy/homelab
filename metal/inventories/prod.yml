@@ -23,7 +23,7 @@ metal:
           }
         metal2:
           {
-            ansible_host: 192.168.2.156
+            ansible_host: 192.168.2.156,
             mac: "52:54:00:56:8e:ca",
             disk: sda,
             network_interface: enp1s0,
